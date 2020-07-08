@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <link rel="stylesheet" href="{{ url_for('static', filename = 'main.css') }}">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="keywords" content="search, the-eye">
+    <meta name="description" content="Search the-eye with updated database">
+    <title>Search The Eye</title>
+</head>
+<body>
+    <h1>Search The-Eye</h1>
+    <form action="." method="POST" class="search_form">
+        <!--//TODO: alert user if max length is passed-->
+        <section class = "middle">
+            <input name="{{constants.inputNames['query']}}" type="text" placeholder="{{constants.searchBarPlaceholder}}" minlength="{{constants.minQueryLength}}" required /> 
+        </section>
+        <section class="middle">
+            <input type = "submit" value = "{{constants.submitButtonPlaceholder}}" />
+        </section>
+        <section class = "middle">
+            <section class="container">
+                {% for type in constants.types %}
+                    {% if loop.index0 == 0 %}
+                        <input type="radio" name="{{constants.inputNames['searchType']}}" id = "{{type.value}}" value="{{type.value}}" checked/>
+                    {% else %}
+                        <input type="radio" name="{{constants.inputNames['searchType']}}" id = "{{type.value}}" value="{{type.value}}" />
+                    {% endif %}
+                    <label for="{{type.value}}">{{type.label}}</label>
+                {% endfor %}
+                <hr />
+            </section>
+        </section>
+    </form>
+    <div class="bottom">
+        <p>Query can only be alphanumerical with spaces, length of {{constants.minQueryLength}} to {{constants.maxQueryLength}} (invalid characters are stripped before search)</p>
+        <p>Note that search is made <em>only</em> against file and directory names; file contents are not searched</p>
+        <p>Fuzzy search uses <a href="https://github.com/maxbachmann">quick ratio</a> fuzzy search</p>
+        <p>Basic search makes sure each word in query exist as a part of the result</p>
+        <div class="code">
+            Examples:
+            <code>"go home" => going home = a home to go to = 100% match</code>
+            <code>"best day" => bestest person = another day = better day = 50% match</code>
+        </div>
+        <p>Loose Perfect ensures that each word of the query is exactly in the result</p>
+        <div class="code">
+            Examples:
+            <code>"go home" => i go home == a home to go to = home go = 100% match</code>
+            <code>"best day" => best person = another day = best days = 50% match</code>
+        </div>
+        <p>Strict Perfect ensures that the entire query is exactly in the result</p>
+        <div class="code">
+            Examples:
+            <code>"go home" => i go home = those who go home should = 100% match</code>
+            <code>"best day" => bestest person = another day = better day = day best = 0% match</code>
+        </div>
+        <p>Minimum displayed score is <u style="color:red">{{constants.minScoreToShowForFuzz}}</u> for fuzzy and <u style="color:red">{{constants.minScoreToShow}}</u> for others</p>
+        <p>Source will be available soon(it's still messy af)</p>
+    </div>
+</body>
+</html>

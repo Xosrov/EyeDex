@@ -1,0 +1,108 @@
+/* MAIN page */
+@font-face {
+    font-family: cat;
+    src: url("/static/fonts/Cat Eyes.otf");
+}
+@font-face {
+    font-family: code;
+    src: url("/static/fonts/code li.otf");
+}
+@font-face {
+    font-family: limo;
+    src: url("/static/fonts/Ch&Limos.ttf");
+}
+* {
+    background-color: #222222;
+    font-family: limo, Arial, Helvetica, sans-serif;
+    font-size: 3vh;
+}
+input[type=text] {
+    background-color: #7e7e7e;
+    width: 100%;
+    padding: 12px 20px;
+    margin: 0 0.5vh 0 0.5vh;
+    box-sizing: border-box;
+    border: 0.5vh solid black;
+    border-radius: 2vh;
+    color: white;
+    font-size: 4vh;
+}
+input[type=text]::placeholder {
+    color: rgb(172, 171, 171);
+    font-size: 4vh;
+}
+input[type=text]:focus {
+    background-color: #7e7e7e;
+    border: 0.5vh solid white;
+    color: black;
+}
+h1 {
+    font-family: cat, Cambria, Cochin, Georgia, Times, 'Times New Roman', serif;
+    justify-content: center;
+    text-align: center;
+    color: white;
+    font-size: 10vh;
+}
+section.middle {
+    display: flex;
+    flex-direction: row;
+    margin: 2vh;
+    text-align: center;
+    justify-content: center;
+    max-width: 100% ;
+    word-wrap: break-word;
+    color: white;
+}
+input[type=submit] {
+    font-size: 4vh;
+    color: white;
+    margin-bottom: 2vh;
+    width: 30%;
+    border: 0.5vh inset white;
+}
+input[type=submit]:hover {
+    background-color: green;
+}
+label {
+    color: white;
+}
+.bottom {
+    padding: 0.5vh 1vh 0.5vh 1vh;
+    background-color: white;
+}
+.bottom > p{
+    background-color: white;
+    font-size: 4vh;
+    font-weight: bold;
+}
+.bottom > p::before{
+    content: "∘ ";
+    font-size: 4vh;
+    color: red;
+}
+
+.bottom > .code{
+    color: lightgreen;
+    margin-top: -3vh;
+    margin-left: 5vh;
+    padding: 1vh;
+}
+
+.bottom > .code code {
+    color: white;
+    display: block;
+    font-size: 3vh;
+    margin-left: 1vh;
+}
+p > * {
+    background-color: inherit;
+    font-family: inherit;
+    font-size: inherit;
+}
+/* ERROR page */
+.error {
+    color: red;
+    font-family: monospace;
+    align-content: center;
+    text-align: center;
+}

@@ -1,0 +1,7 @@
+.vscode
+db*.json
+search
+search.cpp
+stack*
+indexer.py
+wsgi.py

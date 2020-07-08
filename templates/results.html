@@ -1,0 +1,19 @@
+<!DOCTYPE html>
+<html lang="en">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta http-equiv="X-UA-Compatible" content="ie=edge">
+<title>Results for {{query}}</title>
+<head>
+    <script type="text/javascript">var results={{results|safe}};var query="{{query}}";var baseURL="{{base}}"</script>
+    <script type="text/javascript" src="{{url_for('static', filename='jquery.js')}}"></script>
+    <script type="text/javascript" src="{{url_for('static', filename='pako.js')}}"></script>
+    <script type="text/javascript" src="{{url_for('static', filename='other.js')}}"></script>
+    <link rel="stylesheet" href="{{ url_for('static', filename = 'results.css') }}">
+        
+</head>
+<body>
+<p style="color: red" id="noscript">Javascript is required to parse the data</p>
+    <!--js generated-->
+</body>
+</html>

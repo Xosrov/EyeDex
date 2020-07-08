@@ -1,0 +1,7 @@
+Requirements:
+C++: libzmq3-dev and others as needed
+Python: pyzmq flask rapidfuzz
+Build:
+g++ fastSearch.cpp thirdParty.{cpp,h} -lz -lpthread -lzmq -o searcher
+
+Usage
