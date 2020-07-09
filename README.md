@@ -2,7 +2,7 @@
 *Search (almost) everything on The-Eye* 
 ----
 
-I created this because a friend of mine wanted books on a particular subject, but didn't want to sift through all files on the site
+I created this because a friend of mine wanted books on a particular subject, but didn't want to sift through all files on the site  
 Requires at least 4GB's of RAM (database is loaded to RAM)
 ### Before you start
 1. Download the databases
