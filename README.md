@@ -26,6 +26,7 @@ Requires at least 4GB's of RAM (database is loaded to RAM)
     * You can edit the fastSearch.cpp file to modify this file name(i was too lazy to implement something for that)
 1. Run the searcher file in cpp/ and wait for it to be loaded
 1. While waiting for it to load to RAM, run the main.py file to initiate flask
+    * Edit the file and change the line with "baseURL = "https://the-eye.eu/public/" if you're using that database(This will be fixed later)
     * You can customize things like minimum matching score from the main.py file
 1. Navigate to localhost:5000 in a browser(more info provided there)
 1. Done
