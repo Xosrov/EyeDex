@@ -2,7 +2,7 @@
 import os, sys
 from tempfile import mkstemp
 from shutil import move, copymode
-from urllib.parse import unquote, quote
+from urllib.parse import unquote
 BASEURL = "http://the-eye.eu/public/"
 DELIMITER = "&"
 

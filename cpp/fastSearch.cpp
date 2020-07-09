@@ -1,3 +1,7 @@
+/*
+2020 Xosrov
+Who needs header files x-x
+*/
 // Modified for use in web server
 //basics
 #include <string>
@@ -21,6 +25,8 @@ using namespace std;
 #include <mutex>
 //comm port
 const string PORT = "612300";
+//db
+#define DBFILE "dbformatted.json"
 // NOTE: DELIMITER FOR COMPRESSING TO RAM, should be removed by formatter
 // if causes issues, make sure it's stripped from all strings in db, currently only
 // stipped from "name", via fuzz's default_process
@@ -32,6 +38,7 @@ const string PORT = "612300";
 //less writing for future
 using rapidfuzz::utils::default_process;
 using rapidfuzz::fuzz::quick_lev_ratio;
+//supported search types
 typedef enum {basic, fuzzy, exactS, exactL} search_type;
 class VarCompressor {
     public:
@@ -74,7 +81,7 @@ int main()
     zmq::socket_t server(ctx, zmq::socket_type::rep);
     server.bind("tcp://0.0.0.0:" + PORT);
     zmq::message_t input;
-    Searcher searcher("dbformatted.json");
+    Searcher searcher(DBFILE);
     cout << "Database Loaded\n===============\n";
     /*
     Message format:
@@ -299,8 +306,8 @@ unsigned Searcher::search_by_name(vector<vector<string>>& results, string query,
     if (searchType == basic or searchType == exactL)
     {
         boost::split(splitted, query, boost::is_any_of(" "));
-        for (const auto& i:splitted) 
-            cout << i << endl;
+        // for (const auto& i:splitted) 
+        //     cout << i << endl;
     }
     
     mutex threadMu;
@@ -385,7 +392,7 @@ Searcher::Searcher(string dbPath)
                 this -> minimal_data.push_back(compactList);
             }
         } catch(...) {
-            cout << "Exception encountered reading \"" << debug << "\" from db, continue anyway\n";
+            cout << "Exception encountered reading \"" << debug << "\" from db, continue anyway(ignore if it's \"{\")\n";
             continue;
         }
     }
