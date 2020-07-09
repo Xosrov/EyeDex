@@ -2,7 +2,7 @@
 ## Search (almost) everything on The-Eye
 I created this because a friend of mine wanted books on a particular subject, but didn't want to sift through all files on the site
 Requires at least 4GB's of RAM (database is loaded to RAM)
-==== 
+----
 
 ### Before you start
 1. Download the databases
@@ -19,7 +19,7 @@ Requires at least 4GB's of RAM (database is loaded to RAM)
     * In case of errors, make sure required libs are installed(libzmq3-dev and others as needed)
 4. Install required python libraries:   
     * pip3 install pyzmq flask rapidfuzz
-==== 
+---- 
 
 ### Usage
 1. Rename formatted database file to "dbformatted.json" and move it to cpp/
@@ -29,7 +29,7 @@ Requires at least 4GB's of RAM (database is loaded to RAM)
     * You can customize things like minimum matching score from the main.py file
 1. Navigate to localhost:5000 in a browser(more info provided there)
 1. Done
-==== 
+---- 
 
 ### Notes
 * This was originally meant to be hosted on a server; however the cost of a server is too high for me so it's open source instead
