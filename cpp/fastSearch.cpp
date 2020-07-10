@@ -399,7 +399,7 @@ Searcher::Searcher(string dbPath)
     auto stop = std::chrono::high_resolution_clock::now(); 
     auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(stop - start);
     cout << "Took " << duration.count() << " milliseconds" << endl;
-    cout << "Removing Dupes.."
+    cout << "Removing Dupes.." << endl;
     unsigned old_size = this -> minimal_data.size();
     std::sort(this->minimal_data.begin(), this->minimal_data.end());
     this->minimal_data.erase(std::unique(this->minimal_data.begin(), this->minimal_data.end()), this->minimal_data.end());

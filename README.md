@@ -7,7 +7,7 @@ Requires at least 4GB's of RAM (database is loaded to RAM)
 ### Before you start
 1. Download the databases
     * [Google Drive Link](https://drive.google.com/drive/folders/1kf4lTu3-ZMlUveiCQL_B7qYZm0WAHKKB?usp=sharing)
-    * Databases are split in two parts, the Piracy/ directory and everything else
+    * Databases are split in two parts, JUST the Piracy/ directory and everything else
 2. Format the databases to feed to the program
     * Move the databases to the "database" folder
     * python3 formatter.py [inputfile] [outputfile]
