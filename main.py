@@ -17,8 +17,7 @@ class Constants:
    minScoreToShow: int = 66
    #for fuzzy. generally takes more time so has a higher min score
    minScoreToShowForFuzz: int = 80
-   #base URL stripped from base DB files, uncomment if using for Piracy folder
-   # baseURL = "https://the-eye.eu/public/Piracy"
+   #base URL stripped from base DB files
    baseURL = "https://the-eye.eu/public/"
    #TODO: maximumResultCount = ? implement in search first
    searchBarPlaceholder = "Query"
