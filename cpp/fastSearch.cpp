@@ -12,28 +12,25 @@ Who needs header files x-x
 #include <math.h>
 #include <boost/variant.hpp>
 #include <boost/algorithm/string.hpp>
-#include <zmq.hpp>
-//third-party shiz
+#include <chrono>
+#include <future>
+#include <mutex>
+//non standard
 #include "thirdParty.h"
+#include "zmq.hpp"
 #include "rapidfuzz-cpp/src/fuzz.hpp"
 #include "rapidfuzz-cpp/src/utils.hpp"
 using namespace std;
-//time
-#include <chrono>
-/// threading
-#include <future>
-#include <mutex>
-//comm port
+//back-end communication port
 const string PORT = "612300";
-//db
-#define DBFILE "dbformatted.json"
+//db name
 // NOTE: DELIMITER FOR COMPRESSING TO RAM, should be removed by formatter
 // if causes issues, make sure it's stripped from all strings in db, currently only
 // stipped from "name", via fuzz's default_process
 // stripped from "url" via HTML quoting
-// NOT STRIPPED FROM DATE AND SIZE (should not contain these characters) --fix this
+// NOT STRIPPED FROM DATE AND SIZE (assumed they have none of it)
 #define DELIMITER "|"
-// PART OF URL STRIPPED FROM INPUT DB, CHECK formatter 
+// Base url stripped in formatter
 #define BASEURL "https://the-eye.eu/public/"
 //less writing for future
 using rapidfuzz::utils::default_process;
@@ -67,21 +64,26 @@ private:
     unsigned size;
 public:
     Searcher(string);
-    unsigned search_by_name(vector<vector<string>>& results, string query, float min_score, unsigned splice_count = 20, search_type searchType = fuzzy, bool formated = false);
+    unsigned search_by_name(vector<vector<string>>& results, string query, float min_score, unsigned splice_count = 20, search_type searchType = fuzzy);
     void slice_search_fuzzy(string processed_query, unsigned start, unsigned end, vector<vector<string>>& allResults, mutex& threadMutex, const float& min_score);
     void slice_search_basic(vector<string> processed_query_splited, unsigned start, unsigned end, vector<vector<string>>& allResults, mutex& threadMutex, const float& min_score); //checks that each part of query is in the results somewhere
     void slice_search_exact_loose(vector<string> processed_query_splited, unsigned start, unsigned end, vector<vector<string>>& allResults, mutex& threadMutex, const float& min_score); //makes sure each part of query is EXACTLY in results
     void slice_search_exact_strict(string processed_query, unsigned start, unsigned end, vector<vector<string>>& allResults, mutex& threadMutex, const float& min_score); //makes sure all of query is EXACTLY in results
     string convert_to_json(vector<vector<string>>&); // only body contents are in string
 };
-
-int main()
+//TODO: implement something in case database is not formatted(include special chars in search)
+int main(int argc, char** argv)
 {
+    if (argc != 2)
+    {
+        cout << "Takes formatted database as argument" << endl;
+        return 0;
+    }
     zmq::context_t ctx;
     zmq::socket_t server(ctx, zmq::socket_type::rep);
     server.bind("tcp://0.0.0.0:" + PORT);
     zmq::message_t input;
-    Searcher searcher(DBFILE);
+    Searcher searcher(argv[1]);
     cout << "Database Loaded\n===============\n";
     /*
     Message format:
@@ -101,6 +103,8 @@ int main()
         string type = message.substr(0,2);
         float minScore = stof(message.substr(2,2));
         string query = message.substr(4);
+        //convert to lower-case 
+        boost::algorithm::to_lower(query);
         cout << "Got query '" << query << "' With search type: " << type << endl;
         search_type typeToPass;
         if (type == "fu")
@@ -112,7 +116,7 @@ int main()
         else if (type == "es")
             typeToPass = exactS;
         vector<vector<string>> results;
-        searcher.search_by_name(results, query, minScore, 44, typeToPass, true);
+        searcher.search_by_name(results, query, minScore, 44, typeToPass);
         cout << "Got "<< results.size() << " results!\n===============" << endl;
         string answer;
         if (results.size() == 0)
@@ -138,47 +142,6 @@ string Searcher::convert_to_json(vector<vector<string>>& allResults)
     finalstr.pop_back(); //remove excess comma
     finalstr += "]"; //close list
     return finalstr;
-    /* OLD METHOD, used to return fully formatted html, changed to weakly sorted json for less load on server(more on client)
-    string finalStr = "";
-    finalStr += "<h2 class=\"red\">" + to_string(allResults.size()) +  " results for " + query + "</h1>\n";
-    unsigned counter = 0;
-    bool usingdirs = true; //find when dirs are ended in case directories are first
-    for (const auto &data : allResults)
-    {
-        string url = BASEURL + zlibdecode(data[2]);
-        if (counter == each_page)
-        {
-            finalStr += "<div class=\"sep\">\n";
-            counter = 0;
-        }
-        if (data.size() == 4)
-        {
-            finalStr += "<h1>At score " + data[0] + " is \"" + data[1] + "\" Directory with below info:</h1>";
-            finalStr += "<section class=\"data\"><p>Date: " + data[3] + "</p>";
-        }
-        else 
-        {
-            if (directoriesFirst and usingdirs)
-            {
-                finalStr += "<h2 class=\"red\">Files</h1>\n<hr />\n";
-                usingdirs = false;
-            }
-            string ftype;
-            if (url.rfind('/') > url.rfind('.'))
-                ftype = "???";
-            else
-                ftype = url.substr(url.rfind('.'));
-            finalStr += "<h1>At score " + data[0] + " is \"" + data[1] + "\" File with below info:</h1>";
-            finalStr += "<section class=\"data\"><p>Date: " + data[3] + "</p><p>Type: " + ftype + "</p><p>Size: " + data[4] + "</p>";
-        }
-        finalStr += "<a target=\"_blank\" href=\"" + url + "\">" + url + "</a></section>\n";
-        counter ++;
-    }
-
-    finalStr += "</div>";
-    return finalStr;
-    */
-
 }
 /*
 //NOTE:uses start, doesn't use end
@@ -285,23 +248,9 @@ void Searcher::slice_search_fuzzy(string processed_query, unsigned start, unsign
         }
     }
 }
-unsigned Searcher::search_by_name(vector<vector<string>>& results, string query, float min_score, unsigned splice_count, search_type searchType, bool formated)
+unsigned Searcher::search_by_name(vector<vector<string>>& results, string query, float min_score, unsigned splice_count, search_type searchType)
 {
     // exactMatch only works when fuzzy is false. it ensures query matches exact word in result
-    //process query
-    // max result count 0 for none
-    if (!formated)
-    {
-        //remove double spaces if they exist
-        size_t doubleSpace = query.find("  ");
-        while (doubleSpace != string::npos)
-        {
-            query.erase(doubleSpace, 1);
-            doubleSpace = query.find("  ");
-        }
-        query = default_process(query);
-    }
-    // for types that need split input, one for all solution
     vector<string> splitted;
     if (searchType == basic or searchType == exactL)
     {
@@ -309,7 +258,6 @@ unsigned Searcher::search_by_name(vector<vector<string>>& results, string query,
         // for (const auto& i:splitted) 
         //     cout << i << endl;
     }
-    
     mutex threadMu;
     vector<future<void>> processes;
     unsigned splitSize = static_cast<unsigned>(this -> size/splice_count)+1;
@@ -413,7 +361,6 @@ Searcher::Searcher(string dbPath)
     //     list<string>::iterator it;
     //     for (it = this -> minimal_data[i].begin(); it != this -> minimal_data[i].end(); ++it)
     //         cout << "\t" << *it << endl;
-        
     // }
 }
 
