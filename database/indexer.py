@@ -16,9 +16,9 @@ from urllib.parse import unquote, quote
 from time import sleep
 GETPIRACY = False # set to true to get Piracy/ directory instead
 if GETPIRACY:
-    DBDIR = os.path.join(os.path.dirname(os.path.realpath(__file__)), "dbP.json")
+    DBDIR = os.path.join(os.path.dirname(os.path.realpath(__file__)), "dbPiracy.json")
 else:
-    DBDIR = os.path.join(os.path.dirname(os.path.realpath(__file__)), "db.json")
+    DBDIR = os.path.join(os.path.dirname(os.path.realpath(__file__)), "dbPublicNoPiracy.json")
 BASEURL = "http://the-eye.eu/public/"
 BASEURLPIRACY = "http://the-eye.eu/public/Piracy/"
 #create a list of temp files that are created. in case program exits, delete them

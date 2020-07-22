@@ -1,0 +1,5 @@
+Flask>=1.1.2
+requests>=2.22.0
+cloudscraper>=1.2.40
+rapidfuzz>=0.9.1
+pyzmq>=19.0.1

@@ -5,3 +5,4 @@ search.cpp
 stack*
 wsgi.py
 test.*
+__pycache__
