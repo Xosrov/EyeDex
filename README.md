@@ -2,7 +2,7 @@
 *Search (almost) everything on The-Eye* 
 ----
 
-*LINUX ONLY*
+*LINUX ONLY*  
 Requires at least 4GB's of RAM (database is loaded to RAM)
 ### Before you start
 1. Unzip the database(s)
