@@ -48,5 +48,6 @@ Requires at least 2GB's of RAM (database is loaded to RAM)
 ### Contribute
 *Hosting the server*  
 * The server.py file can be modified to be hosted for public use. You can contribute by hosting the server for other people to use. Send me an email/message if you're interested.  
+ 
 *Bugs*  
 * For any bug reports or suggestions, open an issue. In case of reporting bugs, provide an example of how you reproduced the undesirable outcome.
