@@ -24,11 +24,8 @@ using namespace std;
 //back-end communication port
 const string PORT = "612300";
 //db name
-// NOTE: DELIMITER FOR COMPRESSING TO RAM, should be removed by formatter
-// if causes issues, make sure it's stripped from all strings in db, currently only
-// stipped from "name", via fuzz's default_process
-// stripped from "url" via HTML quoting
-// NOT STRIPPED FROM DATE AND SIZE (assumed they have none of it)
+//TODO: delimiter should be removed from everything, currently only removed from name(Assumed other data fields don't contain it)
+    //see main class' constructor and how data is processed before being loaded
 #define DELIMITER "|"
 // Base url stripped in formatter
 #define BASEURL "https://the-eye.eu/public/"
@@ -37,25 +34,6 @@ using rapidfuzz::utils::default_process;
 using rapidfuzz::fuzz::quick_lev_ratio;
 //supported search types
 typedef enum {basic, fuzzy, exactS, exactL} search_type;
-class VarCompressor {
-    public:
-        static string getCompressed (vector<string>& dataToCompress, string delimiter = DELIMITER) 
-        {
-            string concatedString = "";
-            for(auto const& value: dataToCompress)
-            {
-                concatedString += value + delimiter;
-            }
-            string result = zlibencode(concatedString, 9);
-            return result;
-        }
-        static void getDecompressed (string& compressedData, vector<string>& desitnation, string delimiter = DELIMITER)
-        {
-            string concatedString = zlibdecode(compressedData);
-            boost::split(desitnation, concatedString, boost::is_any_of(delimiter));
-        }
-};
-
 class Searcher
 {
 private:
@@ -303,6 +281,7 @@ Searcher::Searcher(string dbPath)
 {
     ifstream fileStream(dbPath);
     string line;
+    int urlLen = string(BASEURL).length()-1;
     auto start = std::chrono::high_resolution_clock::now();
     while(getline(fileStream, line))
     {
@@ -311,47 +290,53 @@ Searcher::Searcher(string dbPath)
             if (line != "}" and line.substr(line.size()-2, 2) == " {")
             {
                 vector<string> compactList;
-                vector<string> descriptionList;
+                string concatedString = "";
+                // vector<string> descriptionList;
                 // name - 0
-                compactList.push_back(line.substr(1, line.size()-5));
+                string name = line.substr(1, line.size()-5);
+                boost::algorithm::to_lower(name);
+                boost::algorithm::replace_all_copy(name, DELIMITER, "-");
+                compactList.push_back(name);
                 getline(fileStream, line);
                 // files:
                 if (line[0] == '\t')
                 {
                     // url - 1
-                    descriptionList.push_back(line.substr(9, line.size()-11));
+                    concatedString += line.substr(9 + urlLen, line.size()-11) + '|';
+                    // type - skip
                     getline(fileStream, line);
                     // date - 2
-                    descriptionList.push_back(line.substr(10, line.size()-18));
                     getline(fileStream, line);
+                    concatedString += line.substr(10, line.size()-18) + '|';
                     // size - 3
-                    descriptionList.push_back(line.substr(10, line.size()-11));
+                    getline(fileStream, line);
+                    concatedString += line.substr(10, line.size()-11) + '|';
                 }
                 //directories:
                 else
                 {
                     // url - 1
-                    descriptionList.push_back(line.substr(8, line.size()-10));
-                    getline(fileStream, line);
+                    concatedString += line.substr(8 + urlLen, line.size()-10) + '|';
                     // date - 2
-                    descriptionList.push_back(line.substr(9, line.size()-17));
+                    getline(fileStream, line);
+                    concatedString += line.substr(9, line.size()-17) + '|';
                 }
-                compactList.push_back(VarCompressor::getCompressed(descriptionList));
+                compactList.push_back(zlibencode(concatedString, 9));
                 this -> minimal_data.push_back(compactList);
             }
-        } catch(...) {
+        } catch(out_of_range) {
             cout << "Exception encountered reading \"" << debug << "\" from db, continue anyway(ignore if it's \"{\")\n";
             continue;
         }
     }
-    auto stop = std::chrono::high_resolution_clock::now(); 
-    auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(stop - start);
-    cout << "Took " << duration.count() << " milliseconds" << endl;
     cout << "Removing Dupes.." << endl;
     unsigned old_size = this -> minimal_data.size();
     std::sort(this->minimal_data.begin(), this->minimal_data.end());
     this->minimal_data.erase(std::unique(this->minimal_data.begin(), this->minimal_data.end()), this->minimal_data.end());
     this -> size = this -> minimal_data.size();
+    auto stop = std::chrono::high_resolution_clock::now(); 
+    auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(stop - start);
+    cout << "Took " << duration.count() << " milliseconds" << endl;
     cout << "Usable len of data: " << this -> size << ", Had " << old_size-this->size << " Dupes" << endl;
     display_mem_usage();
     //display data:

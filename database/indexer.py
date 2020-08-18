@@ -14,7 +14,7 @@ from typing import List, Tuple
 from datetime import datetime
 from urllib.parse import unquote, quote
 from time import sleep
-GETPIRACY = False # set to true to get Piracy/ directory instead
+GETPIRACY = True # set to true to get Piracy/ directory instead
 if GETPIRACY:
     DBDIR = os.path.join(os.path.dirname(os.path.realpath(__file__)), "dbPiracy.json")
 else:
@@ -371,10 +371,6 @@ def update_db(stackFile, inputdb, exceptionList=[]):
     stackContents = ast.literal_eval(stackContents)
     #todo: repetitions shouldn't exist anyway.. why did i add this(consider removal):
     stackContents = list(set(stackContents)) #remove repetitions
-    #remove when stack creation also doesn't have quote:
-    for i in range(len(stackContents)):
-        stackContents[i] = BASEURL + unquote(stackContents[i])
-    #remove exceptions
     print("formatting with\n" + str(stackContents))
     fh, abs_path = mkstemp()
     tempFiles.append(abs_path)

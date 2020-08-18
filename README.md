@@ -3,24 +3,23 @@
 ----
 
 *LINUX ONLY*  
-Requires at least 4GB's of RAM (database is loaded to RAM)
+Requires at least 2GB's of RAM (database is loaded to RAM)
 ### Before you start
 1. Unzip the database(s)
     * Navigate to the database/ directory
-    * Unzip .zip files where they are
-2. Compile the searcher program
-    * Navigate to the cpp folder
+    * Unzip .zip database files where they are
+2. Install required python libraries:   
+    * Python3 dependencies: pip3 install -r requirements.txt
+    * C++     dependencies: apt-get install libboost-dev libz-dev libzmq3-dev
+3. Compile the searcher program
+    * Navigate to the cpp/ directory
     * Compile the searcher with "make"
-    * In case of errors, make sure required libs are installed(libzmq3-dev and others as needed)
-3. Install required python libraries:   
-    * pip3 install -r requirements.txt
 ---- 
 
 ### Usage
-1. Format/load the database:
-    * python3 loader.py
-    * Use the -h tag for help with additional arguments 
-2. Once the database loads, run the server:
+1. Load the database:
+    * python3 loader.py -f databaseJsonFile
+2. Once(or while) the database loads, run the server:
     * python3 server.py
     * Use the -h tag for help with additional arguments 
 3. Open the local server on a browser(default at localhost:5000)
@@ -33,7 +32,9 @@ Requires at least 4GB's of RAM (database is loaded to RAM)
     * Indexer will start saving to json, directories can be skipped with KeyboardInterrupt
     * If a database already exists in the database/ folder, it will update incomplete or out-of-date directories
     * Some pages are blocked or can not be indexed, so you might have to run the indexer multiple times to index everything
-    * Indexer might not work for directories like alviro/ (haven't tested yet)
+    * Defaulted to only work on Public/ and excluding Piracy/(as it's too big)
+    * Can be modified to index Priacy/ separately. Just set the GETPIRACY flag in the indexer.py file to True. This saves into a different file and might run into errors because of Cloudflare, so multiple runs are necessary for a full index. The file size is also larger meaning at least 4GB's of RAM is needed.
+    * Indexer might not work for directories like alviro/ (slightly different structure | Cloudflare heavily enforced)
 ---- 
 
 ### Notes
@@ -42,3 +43,10 @@ Requires at least 4GB's of RAM (database is loaded to RAM)
 * You can update the database yourself, but I'll also update them every now and again.
 * Elements of the database like HTML pages are not scraped correctly, they don't affect much but I'll have to remove or notify about them in a future update.
 * I used json as it is easy to use, readable and supports the nested format that i want. The format is easy to iterate over line-by-line because of the predictable way it's formatted. Inspect the first few hundred bytes to see what i mean.
+---- 
+
+### Contribute
+*Hosting the server*  
+* The server.py file can be modified to be hosted for public use. You can contribute by hosting the server for other people to use. Send me an email/message if you're interested.
+*Bugs*  
+* For any bug reports or suggestions, open an issue. In case of reporting bugs, provide an example of how you reproduced the undesirable outcome.
