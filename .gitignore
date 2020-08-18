@@ -6,4 +6,3 @@ stack*
 wsgi.py
 test.*
 __pycache*
-__init*

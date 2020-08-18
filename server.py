@@ -1,7 +1,7 @@
 from flask import Flask, render_template, request
 from argparse import ArgumentParser
-from rapidfuzz.utils import default_process
 import zmq
+#internal communication port
 PORT = "612300"
 app = Flask(__name__)
 #app.debug = True
@@ -58,11 +58,6 @@ def search_page():
       else:
          return render_template("error.html", error=Constants.errors[2])
    return render_template("main.html", constants=Constants)
-
-
-def processQuery(query: str) -> str:
-   return default_process(" ".join(query.split())).replace('  ', ' ')
-
 
 def askForResults(query: str, search_type: str):
    Stype = search_type
