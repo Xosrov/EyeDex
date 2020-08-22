@@ -12,12 +12,12 @@ client.connect(f"tcp://0.0.0.0:{PORT}")
 
 
 class Constants:
-   minQueryLength = 3
-   maxQueryLength = 300
+   minQueryLength: int = 3
+   maxQueryLength: int = 300
    #for all search types except fuzzy
-   minScoreToShow: int = 66
+   minScoreToShow: int = 66 # must be in range 10-99
    #for fuzzy. generally takes more time so has a higher min score
-   minScoreToShowForFuzz: int = 80
+   minScoreToShowForFuzz: int = 80 # must be in range 10-99
    #base URL stripped from base DB files
    baseURL = "https://the-eye.eu/public/"
    #TODO: maximumResultCount = ? implement in search first
@@ -96,9 +96,15 @@ if __name__ == '__main__':
       print("Port already in use for back-end, try another")
       quit()
    if args.minIntFuzz is not None:
+      if not 10 <= args.minIntFuzz <= 99:
+         print("Value must be in range 10-99")
+         quit()
       Constants.minScoreToShowForFuzz = args.minIntFuzz
       print(f"Using {args.minIntFuzz} as min for fuzz")
    if args.minIntOthers is not None:
+      if not 10 <= args.minIntOthers <= 99:
+         print("Value must be in range 10-99")
+         quit()
       Constants.minScoreToShow = args.minIntOthers
-      print(f"Using {args.minIntOthers} as min for others")
+      print(f"Using {args.minIntOthers} as min for other search types")
    app.run(host='0.0.0.0', port=args.port)

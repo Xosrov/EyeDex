@@ -23,12 +23,12 @@ Who needs header files x-x
 using namespace std;
 //back-end communication port
 const string PORT = "612300";
-//db name
-//TODO: delimiter should be removed from everything, currently only removed from name(Assumed other data fields don't contain it)
-    //see main class' constructor and how data is processed before being loaded
+//delimiters used between words, for example "Word1 Word2" is treated like "Word1-Word2"
+const string seperators = " _-.,'\"!?$`=+;:|<>/\\";
+//TODO: delimiter should be removed from everything, currently only removed from name(Assumed other data fields don't contain it). see main class' constructor and how data is processed before being loaded
 #define DELIMITER "|"
 // Base url stripped in formatter
-#define BASEURL "https://the-eye.eu/public/"
+#define BASEURL "http://the-eye.eu/public/"
 //less writing for future
 using rapidfuzz::utils::default_process;
 using rapidfuzz::fuzz::quick_lev_ratio;
@@ -76,6 +76,8 @@ int main(int argc, char** argv)
     */
     while(true)
     {
+        //clear results
+        vector<vector<string>> results; 
         server.recv(&input);
         string message = string(static_cast<char*>(input.data()), input.size());
         string type = message.substr(0,2);
@@ -93,7 +95,6 @@ int main(int argc, char** argv)
             typeToPass = exactL;
         else if (type == "es")
             typeToPass = exactS;
-        vector<vector<string>> results;
         searcher.search_by_name(results, query, minScore, 44, typeToPass);
         cout << "Got "<< results.size() << " results!\n===============" << endl;
         string answer;
@@ -108,6 +109,11 @@ int main(int argc, char** argv)
     }
     return 0;
 }
+/*
+    convert results to json string.
+    List of lists, with each element having the format below:
+        [score, name, base64-encoded of zlib-encoded details]
+*/
 string Searcher::convert_to_json(vector<vector<string>>& allResults)
 {
     string finalstr = "["; //json formatted string with results
@@ -115,36 +121,27 @@ string Searcher::convert_to_json(vector<vector<string>>& allResults)
     {
         //                   score               name                    details
         finalstr += "[" + it->at(0) + ",\"" + it->at(1) + "\",\"" + base64_encode(it->at(2)) + "\"],";
-        allResults.pop_back(); //NOTE: does this improve performance considerably anyway?
     }
     finalstr.pop_back(); //remove excess comma
     finalstr += "]"; //close list
     return finalstr;
 }
-/*
-//NOTE:uses start, doesn't use end
-*/
 void Searcher::slice_search_exact_strict(string processed_query, unsigned start, unsigned end, vector<vector<string>>& allResults, mutex& threadMutex, const float& min_score)
 {
     auto endit = next(this -> minimal_data.begin(), end);
-    string delimiters = " _-.,'\"!?$`=+;:|<>/\\";
+    
     for(auto it = next(this -> minimal_data.begin(), start); it != endit; it++)
     {
         string stringToCheck = it -> at(0);
         auto index = stringToCheck.find(processed_query);
         if (index != string::npos && 
-            ( stringToCheck.length() == index + processed_query.length() || delimiters.find(stringToCheck[index + processed_query.length()]) != string::npos ) && //proceeded by end of string or delimiter
-            ( index == 0                                                 || delimiters.find(stringToCheck[index -1])                         != string::npos )    //proceeds end of string or delimiter
+            ( stringToCheck.length() == index + processed_query.length() || seperators.find(stringToCheck[index + processed_query.length()]) != string::npos ) && //proceeded by end of string or delimiter
+            ( index == 0                                                 || seperators.find(stringToCheck[index -1])                         != string::npos )    //proceeds end of string or delimiter
         )
         {
-            vector<string> data;
-            data.push_back("100");
-            //append the rest of the data
-            for(const auto &subdata : *it)
-                data.push_back(subdata);
-            threadMutex.lock();
-            allResults.push_back(data);
-            threadMutex.unlock();
+        threadMutex.lock();
+        allResults.push_back(vector<string>{"100", stringToCheck, it->at(1)});
+        threadMutex.unlock();
         }
     }
 }
@@ -152,7 +149,6 @@ void Searcher::slice_search_exact_loose(vector<string> processed_query_splited, 
 {
     float percentToAdd = 100/processed_query_splited.size();
     auto endit = next(this -> minimal_data.begin(), end);
-    string delimiters = " _-.,'\"!?$`=+;:|<>/\\";
     for(auto it = next(this -> minimal_data.begin(), start); it != endit; it++)
     {
         string stringToCheck = it -> at(0);
@@ -161,20 +157,17 @@ void Searcher::slice_search_exact_loose(vector<string> processed_query_splited, 
         {
             auto index = stringToCheck.find(namePart); 
             if (index != string::npos && 
-                ( stringToCheck.length() == index + namePart.length() || delimiters.find(stringToCheck[index + namePart.length()]) != string::npos ) && //proceeded by end of string or delimiter
-                ( index == 0                                          || delimiters.find(stringToCheck[index -1])                  != string::npos )    //proceeds end of string or delimiter
+                ( stringToCheck.length() == index + namePart.length() || seperators.find(stringToCheck[index + namePart.length()]) != string::npos ) && //proceeded by end of string or delimiter
+                ( index == 0                                          || seperators.find(stringToCheck[index -1])                  != string::npos )    //proceeds end of string or delimiter
             )
+            {
                 score += percentToAdd;
+            }
         }
         if (score >= min_score)
         {
-            vector<string> data;
-            data.push_back(to_string(score));
-            //append the rest of the data
-            for(const auto &subdata : *it)
-                data.push_back(subdata);
             threadMutex.lock();
-            allResults.push_back(data);
+            allResults.push_back(vector<string>{to_string(score), stringToCheck, it->at(1)});
             threadMutex.unlock();
         }
     }
@@ -192,13 +185,8 @@ void Searcher::slice_search_basic(vector<string> processed_query_splited, unsign
                 score += percentToAdd;
         if (score >= min_score)
         {
-            vector<string> data;
-            data.push_back(to_string(score));
-            //append the rest of the data
-            for(const auto &subdata : *it)
-                data.push_back(subdata);
             threadMutex.lock();
-            allResults.push_back(data);
+            allResults.push_back(vector<string>{to_string(score), stringToCheck, it->at(1)});
             threadMutex.unlock();
         }
     }
@@ -215,17 +203,17 @@ void Searcher::slice_search_fuzzy(string processed_query, unsigned start, unsign
         auto score = rapidfuzz::fuzz::ratio(processed_query, stringToCheck, min_score);
         if (score) 
         {
-            vector<string> data;
-            data.push_back(to_string(score));
-            //append the rest of the data
-            for(const auto &subdata : *it)
-                data.push_back(subdata);
             threadMutex.lock();
-            allResults.push_back(data);
+            allResults.push_back(vector<string>{to_string(score), stringToCheck, it->at(1)});
             threadMutex.unlock();
         }
     }
 }
+/*
+    run search on splice_count splices of the database, each running in a different thread
+    stores to results list of lists with below format:
+        [score, name, zlib-encoded details]
+*/
 unsigned Searcher::search_by_name(vector<vector<string>>& results, string query, float min_score, unsigned splice_count, search_type searchType)
 {
     // exactMatch only works when fuzzy is false. it ensures query matches exact word in result
@@ -242,110 +230,102 @@ unsigned Searcher::search_by_name(vector<vector<string>>& results, string query,
     unsigned start = 0;
     //TODO: make sure iterators aren't missing the borders
     auto time0 = std::chrono::high_resolution_clock::now();
-    for (unsigned i = splitSize ; i < this-> size + 1 ; i+=splitSize)
-    {
-        // cout << "starting thread from " << start << " to " << i << endl;
-        if (searchType == fuzzy)
-            processes.push_back(async(&Searcher::slice_search_fuzzy, this, query, start, i, ref(results), ref(threadMu), ref(min_score)));
-        else if (searchType == exactS)
-            processes.push_back(async(&Searcher::slice_search_exact_strict, this, query, start, i, ref(results), ref(threadMu), ref(min_score)));
-        else if (searchType == basic)
-            processes.push_back(async(&Searcher::slice_search_basic, this, splitted, start, i, ref(results), ref(threadMu), ref(min_score)));
-        else if (searchType == exactL)
-            processes.push_back(async(&Searcher::slice_search_exact_loose, this, splitted, start, i, ref(results), ref(threadMu), ref(min_score)));
-        start = i;
-    }
-    // cout << "starting thread from " << start << " to " << this ->minimal_data.size() << endl;
     if (searchType == fuzzy)
+    {
+        for (unsigned i = splitSize ; i < this-> size + 1 ;start = i, i+=splitSize)
+            processes.push_back(async(&Searcher::slice_search_fuzzy, this, query, start, i, ref(results), ref(threadMu), ref(min_score)));
         processes.push_back(async(&Searcher::slice_search_fuzzy, this, query, start, this -> minimal_data.size(),ref(results), ref(threadMu), ref(min_score)));
+    }
     else if (searchType == exactS)
+    {
+        for (unsigned i = splitSize ; i < this-> size + 1 ;start = i, i+=splitSize)
+            processes.push_back(async(&Searcher::slice_search_exact_strict, this, query, start, i, ref(results), ref(threadMu), ref(min_score)));
         processes.push_back(async(&Searcher::slice_search_exact_strict, this, query, start, this -> minimal_data.size(), ref(results), ref(threadMu), ref(min_score)));
+    }
     else if (searchType == basic)
+    {
+        for (unsigned i = splitSize ; i < this-> size + 1 ;start = i, i+=splitSize)
+            processes.push_back(async(&Searcher::slice_search_basic, this, splitted, start, i, ref(results), ref(threadMu), ref(min_score)));
         processes.push_back(async(&Searcher::slice_search_basic, this, splitted, start, this -> minimal_data.size(), ref(results), ref(threadMu), ref(min_score)));
+    }
     else if (searchType == exactL)
+    {
+        for (unsigned i = splitSize ; i < this-> size + 1 ;start = i, i+=splitSize)
+            processes.push_back(async(&Searcher::slice_search_exact_loose, this, splitted, start, i, ref(results), ref(threadMu), ref(min_score)));
         processes.push_back(async(&Searcher::slice_search_exact_loose, this, splitted, start, this -> minimal_data.size(), ref(results), ref(threadMu), ref(min_score)));
+    }
     cout << "Processes started, waiting for output..\n";
     for (int i = 0; i < splice_count; ++i)
         processes[i].get();
     auto time1 = std::chrono::high_resolution_clock::now(); 
     auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(time1 - time0);
-    display_mem_usage();
     cout << "Took " << duration.count() << " milliseconds" << endl;
+    display_mem_usage();
     return duration.count();
-    // remove duplicate results DEPRECATED, remove duplicate from database after load instead
-    // sort(results.begin(), results.end());
-    // results.erase( unique( results.begin(), results.end() ), results.end() );
 
 }
+/*
+    load database to RAM, as a list of lists:
+        [name, zlib-encoded details]
+*/
 Searcher::Searcher(string dbPath)
 {
     ifstream fileStream(dbPath);
     string line;
-    int urlLen = string(BASEURL).length()-1;
+    int urlLen = string(BASEURL).length();
     auto start = std::chrono::high_resolution_clock::now();
     while(getline(fileStream, line))
     {
         string debug = line;
         try{
-            if (line != "}" and line.substr(line.size()-2, 2) == " {")
+            if (line[0] == '"' and line[line.length()-1] == '{')
             {
-                vector<string> compactList;
                 string concatedString = "";
-                // vector<string> descriptionList;
                 // name - 0
-                string name = line.substr(1, line.size()-5);
+                string name = line.substr(1, line.length()-5);
                 boost::algorithm::to_lower(name);
                 boost::algorithm::replace_all_copy(name, DELIMITER, "-");
-                compactList.push_back(name);
                 getline(fileStream, line);
                 // files:
                 if (line[0] == '\t')
                 {
                     // url - 1
-                    concatedString += line.substr(9 + urlLen, line.size()-11) + '|';
+                    concatedString += line.substr(9 + urlLen, line.length() - 11 - urlLen) + '|';
                     // type - skip
                     getline(fileStream, line);
                     // date - 2
                     getline(fileStream, line);
-                    concatedString += line.substr(10, line.size()-18) + '|';
+                    concatedString += line.substr(10, line.length()-18) + '|';
                     // size - 3
                     getline(fileStream, line);
-                    concatedString += line.substr(10, line.size()-11) + '|';
+                    concatedString += line.substr(10, line.length()-11) + '|';
                 }
                 //directories:
                 else
                 {
                     // url - 1
-                    concatedString += line.substr(8 + urlLen, line.size()-10) + '|';
+                    concatedString += line.substr(8 + urlLen, line.length() - 10 - urlLen) + '|';
                     // date - 2
                     getline(fileStream, line);
-                    concatedString += line.substr(9, line.size()-17) + '|';
+                    concatedString += line.substr(9, line.length()-17) + '|';
                 }
-                compactList.push_back(zlibencode(concatedString, 9));
-                this -> minimal_data.push_back(compactList);
+                minimal_data.push_back(vector<string>{name, zlibencode(concatedString)});
             }
         } catch(out_of_range) {
-            cout << "Exception encountered reading \"" << debug << "\" from db, continue anyway(ignore if it's \"{\")\n";
+            cout << "Exception encountered reading \"" << debug << "\" from db, continuing anyway...\n";
             continue;
         }
     }
     cout << "Removing Dupes.." << endl;
-    unsigned old_size = this -> minimal_data.size();
-    std::sort(this->minimal_data.begin(), this->minimal_data.end());
-    this->minimal_data.erase(std::unique(this->minimal_data.begin(), this->minimal_data.end()), this->minimal_data.end());
-    this -> size = this -> minimal_data.size();
+    unsigned old_size = minimal_data.size();
+    std::sort(minimal_data.begin(), minimal_data.end());
+    minimal_data.erase(std::unique(minimal_data.begin(), minimal_data.end()), minimal_data.end());
+    this -> size = minimal_data.size();
     auto stop = std::chrono::high_resolution_clock::now(); 
     auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(stop - start);
     cout << "Took " << duration.count() << " milliseconds" << endl;
     cout << "Usable len of data: " << this -> size << ", Had " << old_size-this->size << " Dupes" << endl;
     display_mem_usage();
-    //display data:
-    // for (int i = 0; i < this -> minimal_data.size() ; i++)
-    // {
-    //     cout << "for i = " << i << " data is: \n"; 
-    //     list<string>::iterator it;
-    //     for (it = this -> minimal_data[i].begin(); it != this -> minimal_data[i].end(); ++it)
-    //         cout << "\t" << *it << endl;
-    // }
+
 }
 
