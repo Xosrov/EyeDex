@@ -19,7 +19,7 @@ Requires at least 2GB's of RAM (database is loaded to RAM)
 ### Usage
 1. Load the database:
     * python3 loader.py -f databaseJsonFile
-2. Once(or while) the database loads, run the server:
+2. After the database loads, run the server:
     * python3 server.py
     * Use the -h tag for help with additional arguments 
 3. Open the local server on a browser(default at localhost:5000)
