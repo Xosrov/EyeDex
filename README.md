@@ -1,7 +1,7 @@
 # THE EYE SEARCHING TOOL
 *Search (almost) everything on The-Eye* 
 ----
-
+# Major update coming soon - Much faster and much better implementation. This repo will be split and organized soon
 *LINUX ONLY*  
 Requires at least 2GB's of RAM (database is loaded to RAM)
 ### Before you start
